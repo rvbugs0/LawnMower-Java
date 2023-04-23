@@ -10,9 +10,14 @@ public class MowerFrame {
 
   private ArrayList<MowerStateChangedListener> listeners = new ArrayList<>();
   private Location currentLocation;
+
   enum STATE {
-    STOPPED,RUNNING,RESET
-  };
+    STOPPED,
+    RUNNING,
+    RESET,
+    ENDED,
+  }
+
   private STATE currentState = STATE.RESET;
   private JFrame frame;
   private JPanel panel;
@@ -43,7 +48,7 @@ public class MowerFrame {
     frame.setSize(800, 600);
 
     startButton = new JButton("Start");
-    
+
     startButton.addActionListener(
       new ActionListener() {
         @Override
@@ -60,9 +65,7 @@ public class MowerFrame {
       new ActionListener() {
         @Override
         public void actionPerformed(ActionEvent e) {
-
           currentState = STATE.STOPPED;
-
         }
       }
     );
@@ -82,6 +85,20 @@ public class MowerFrame {
     if (l != null) {
       listeners.add(l);
     }
+  }
+
+  public void updateState(STATE newState) {
+    currentState = newState;
+    if (currentState == STATE.STOPPED) {
+      stopButton.setEnabled(false);
+      startButton.setEnabled(true);
+    } else if (currentState == STATE.RUNNING) {
+      startButton.setEnabled(false);
+      stopButton.setEnabled(true);
+    }else if(currentState ==STATE.ENDED){
+      stopButton.setEnabled(false);
+      startButton.setEnabled(false);
+    } 
   }
 
   public void removeListener(MowerStateChangedListener l) {
@@ -116,7 +133,8 @@ public class MowerFrame {
   }
 
   private void notifyStartPressed() {
-    currentState = STATE.RUNNING;
+    updateState(STATE.RUNNING);
+    // currentState = STATE.RUNNING;
     timer =
       new Timer(
         1000,
@@ -125,11 +143,14 @@ public class MowerFrame {
 
           @Override
           public void actionPerformed(ActionEvent e) {
-            if(currentState==STATE.STOPPED){
+            if (currentState == STATE.STOPPED) {
               timer.stop();
+              updateState(STATE.STOPPED);
             }
-            if (currentState==STATE.RUNNING && !makeMove()) {
+            if (currentState == STATE.RUNNING && !makeMove()) {
               timer.stop();
+              updateState(STATE.ENDED);
+
             }
           }
         }
